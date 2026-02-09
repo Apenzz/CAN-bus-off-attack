@@ -3,12 +3,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;
+#include "test_ecu.h"
 
-typedef struct ECU {
-    ECUState state; 
-    bool is_transmitting;
-} ECU;
+#include "ecu.h"
 
 typedef struct CANBus {
     ECU **nodes; /* connected ecus */
@@ -17,16 +14,11 @@ typedef struct CANBus {
     bool collision_detected; /* if there is a collision in the currect bus tick */
 } CANBus;
 
-ECU* ecu_init() {
-    ECU *ecu = (ECU*)malloc(sizeof(*ecu));
-    if (!ecu) return NULL;
-
-    ecu->state = ERROR_ACTIVE;
-    ecu->is_transmitting = false;
-    return ecu;
-}
 
 int main() {
+    run_ecu_tests();
+    ECU *victim = ecu_init();
+    ECU *attacker = ecu_init();
     printf("Beginning of simulation\n");
     // TODO
     printf("End of the simulation\n");
