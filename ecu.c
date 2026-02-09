@@ -10,6 +10,10 @@ ECU* ecu_init() {
     ecu->bus = NULL;
     ecu->state = ERROR_ACTIVE;
     ecu->is_transmitting = false;
+
+    ecu->msg_list = NULL;
+    ecu->msg_count = 0;
+    ecu->periods = NULL;
     return ecu;
 }
 
