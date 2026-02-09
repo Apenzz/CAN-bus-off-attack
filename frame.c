@@ -5,7 +5,7 @@
 #include "frame.h"
 #include "ecu.h"
 
-void add_frame_to_ecu(uint8_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu) {
+void add_frame_to_ecu(uint32_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu) {
     if (!ecu || dlc > 8) return;
     
     int idx = ecu->msg_count;

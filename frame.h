@@ -13,11 +13,11 @@ typedef struct ECU ECU;
  *
  */
 typedef struct Frame {
-    uint8_t id;   
+    uint32_t id;   
     uint8_t dlc;
     uint8_t data[8];
 } Frame;
 
-void add_frame_to_ecu(uint8_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu);
+void add_frame_to_ecu(uint32_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu);
 
 #endif
