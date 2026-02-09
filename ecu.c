@@ -11,3 +11,8 @@ ECU* ecu_init() {
     ecu->is_transmitting = false;
     return ecu;
 }
+
+void destroy_ecu(ECU *ecu) {
+    if (!ecu) return;
+    free(ecu);
+}

@@ -12,4 +12,6 @@ typedef struct ECU {
 
 ECU* ecu_init();
 
+void destroy_ecu(ECU *ecu);
+
 #endif

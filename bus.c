@@ -16,3 +16,12 @@ CANBus* bus_init(int max_nodes) {
     bus->collision_detected = false;
     return bus;
 }
+
+void destroy_bus(CANBus *bus) {
+    if (!bus) return;
+    
+    for (int i = 0; i < bus->node_count; i++) {
+        destroy_ecu(bus->nodes[i]); 
+    }
+    free(bus);
+}
