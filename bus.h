@@ -12,3 +12,7 @@ typedef struct CANBus {
 } CANBus;
 
 CANBus* bus_init(int max_nodes);
+
+void destroy_bus(CANBus *bus);
+
+int register_ecu(ECU *ecu, CANBus *bus);

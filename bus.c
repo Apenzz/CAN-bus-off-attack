@@ -1,5 +1,7 @@
 #include <stdlib.h>
+
 #include "bus.h"
+#include "ecu.h"
 
 CANBus* bus_init(int max_nodes) {
     if (max_nodes < 2 || max_nodes > 255) max_nodes = 2; /* make room for at least 2 nodes: one victim and one attacker */
@@ -24,4 +26,14 @@ void destroy_bus(CANBus *bus) {
         destroy_ecu(bus->nodes[i]); 
     }
     free(bus);
+}
+
+int register_ecu(ECU* ecu, CANBus *bus) {
+    if (!ecu || !bus) return -1;
+
+    if (bus->node_count < bus->max_nodes) {
+        bus->nodes[bus->node_count++] = ecu; /* register ecu to bus */
+        ecu->bus = bus; /* ecu has referenct to the bus its connected to */
+    }
+    return 0;
 }

@@ -7,6 +7,7 @@ ECU* ecu_init() {
     ECU *ecu = (ECU*)malloc(sizeof(*ecu));
     if (!ecu) return NULL;
 
+    ecu->bus = NULL;
     ecu->state = ERROR_ACTIVE;
     ecu->is_transmitting = false;
     return ecu;
