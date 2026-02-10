@@ -5,6 +5,12 @@
 #include "frame.h"
 #include "bus.h"
 
+static void update_ecu_state(ECU *ecu) {
+    if (ecu->tec > 255) ecu->state = BUS_OFF;
+    else if (ecu->tec >= 128 || ecu->rec >= 128) ecu->state = ERROR_PASSIVE;
+    else ecu->state = ERROR_ACTIVE;
+}
+
 ECU* ecu_init() {
     ECU *ecu = (ECU*)malloc(sizeof(*ecu));
     if (!ecu) return NULL;
@@ -51,8 +57,3 @@ void listen(ECU *ecu) {
     ecu->current_msg = NULL;
 }
 
-static void update_ecu_state(ECU *ecu) {
-    if (ecu->tec > 255) ecu->state = BUS_OFF;
-    else if (ecu->tec >= 128 || ecu->rec >= 128) ecu->state = ERROR_PASSIVE;
-    else ecu->state = ERROR_ACTIVE;
-}
