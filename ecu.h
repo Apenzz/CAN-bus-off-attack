@@ -13,7 +13,9 @@ typedef struct ECU {
     CANBus *bus; /* bus its connected to */
     ECUState state; 
     bool is_transmitting;
-
+    uint16_t tec;
+    uint16_t rec;
+    
     Frame *msg_list; /* list of periodic can frames */
     uint8_t msg_count; /* number of periodic can frames */
     uint32_t *periods; /* periods of msgs */
