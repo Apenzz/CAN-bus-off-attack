@@ -25,6 +25,8 @@ ECU* ecu_init() {
 
 void destroy_ecu(ECU *ecu) {
     if (!ecu) return;
+    free(ecu->msg_list);
+    free(ecu->periods);
     free(ecu);
 }
 
