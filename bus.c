@@ -25,6 +25,7 @@ void destroy_bus(CANBus *bus) {
     for (int i = 0; i < bus->node_count; i++) {
         destroy_ecu(bus->nodes[i]); 
     }
+    free(bus->nodes);
     free(bus);
 }
 
