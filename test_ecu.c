@@ -6,13 +6,26 @@
 #include "test_ecu.h"
 #include "ecu.h"
 #include "frame.h"
+#include "bus.h"
 
 static void test_add_can_message();
 static void test_ecu_init_with_correct_parameters();
+static void test_send();
 
 void run_ecu_tests() {
     test_ecu_init_with_correct_parameters();
     test_add_can_message();
+    test_send();
+}
+
+static void test_send() {
+    ECU *ecu = ecu_init();
+    CANBus *bus = bus_init(0);
+    register_ecu(ecu, bus);
+    add_frame_to_ecu(0x100, 8, NULL, 10, ecu);
+    send(ecu, ecu->msg_list);
+    assert(ecu->current_msg == ecu->msg_list);
+    assert(ecu->is_transmitting == true);
 }
 
 static void test_add_can_message() {

@@ -27,9 +27,9 @@ void destroy_ecu(ECU *ecu) {
     free(ecu);
 }
 
-void send(ECU *ecu, Frame msg) {
+void send(ECU *ecu, Frame *msg) {
     if (!ecu || !ecu->bus || !msg || ecu->state == BUS_OFF) return;
-
+    
     ecu->current_msg = msg;
     ecu->is_transmitting = true;
 }
