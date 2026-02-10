@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 #include "ecu.h"
+#include "frame.h"
 
 ECU* ecu_init() {
     ECU *ecu = (ECU*)malloc(sizeof(*ecu));

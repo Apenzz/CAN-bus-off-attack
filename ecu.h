@@ -4,10 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "frame.h"
+
 
 typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;
 typedef struct CANBus CANBus;
-typedef struct Frame Frame;
 
 typedef struct ECU {
     CANBus *bus; /* bus its connected to */
@@ -27,5 +28,7 @@ typedef struct ECU {
 ECU* ecu_init();
 
 void destroy_ecu(ECU *ecu);
+
+void send(ECU *ecu, Frame msg);
 
 #endif
