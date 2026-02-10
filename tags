@@ -1,0 +1,52 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BUS_OFF	ecu.h	/^typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;$/;"	e	enum:__anon1
+CANBus	bus.h	/^typedef struct CANBus {$/;"	s
+CANBus	bus.h	/^} CANBus;$/;"	t	typeref:struct:CANBus
+CANBus	ecu.h	/^typedef struct CANBus CANBus;$/;"	t	typeref:struct:CANBus
+ECU	bus.h	/^typedef struct ECU ECU;$/;"	t	typeref:struct:ECU
+ECU	ecu.h	/^typedef struct ECU {$/;"	s
+ECU	ecu.h	/^} ECU;$/;"	t	typeref:struct:ECU
+ECU	frame.h	/^typedef struct ECU ECU;$/;"	t	typeref:struct:ECU
+ECUState	ecu.h	/^typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;$/;"	t	typeref:enum:__anon1
+ERROR_ACTIVE	ecu.h	/^typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;$/;"	e	enum:__anon1
+ERROR_PASSIVE	ecu.h	/^typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;$/;"	e	enum:__anon1
+Frame	ecu.h	/^typedef struct Frame Frame;$/;"	t	typeref:struct:Frame
+Frame	frame.h	/^typedef struct Frame {$/;"	s
+Frame	frame.h	/^} Frame;$/;"	t	typeref:struct:Frame
+__ECU_H__	ecu.h	/^#define __ECU_H__$/;"	d
+__ECU_TEST_H__	test_ecu.h	/^#define __ECU_TEST_H__$/;"	d
+__FRAME_H__	frame.h	/^#define __FRAME_H__$/;"	d
+__TEST_BUS_H__	test_bus.h	/^#define __TEST_BUS_H__$/;"	d
+add_frame_to_ecu	frame.c	/^void add_frame_to_ecu(uint32_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu) {$/;"	f
+bus	ecu.h	/^    CANBus *bus; \/* bus its connected to *\/$/;"	m	struct:ECU
+bus_init	bus.c	/^CANBus* bus_init(int max_nodes) {$/;"	f
+collision_detected	bus.h	/^    bool collision_detected; \/* if there is a collision in the currect bus tick *\/$/;"	m	struct:CANBus
+data	frame.h	/^    uint8_t data[8];$/;"	m	struct:Frame
+destroy_bus	bus.c	/^void destroy_bus(CANBus *bus) {$/;"	f
+destroy_ecu	ecu.c	/^void destroy_ecu(ECU *ecu) {$/;"	f
+dlc	frame.h	/^    uint8_t dlc;$/;"	m	struct:Frame
+ecu_init	ecu.c	/^ECU* ecu_init() {$/;"	f
+id	frame.h	/^    uint32_t id;   $/;"	m	struct:Frame
+is_idle	bus.h	/^    bool is_idle;$/;"	m	struct:CANBus
+is_transmitting	ecu.h	/^    bool is_transmitting;$/;"	m	struct:ECU
+main	main.c	/^int main() {$/;"	f
+max_nodes	bus.h	/^    uint8_t max_nodes;$/;"	m	struct:CANBus
+msg_count	ecu.h	/^    uint8_t msg_count; \/* number of periodic can frames *\/$/;"	m	struct:ECU
+msg_list	ecu.h	/^    Frame *msg_list; \/* list of periodic can frames *\/$/;"	m	struct:ECU
+node_count	bus.h	/^    uint8_t node_count;$/;"	m	struct:CANBus
+nodes	bus.h	/^    ECU **nodes; \/* connected ecus *\/$/;"	m	struct:CANBus
+periods	ecu.h	/^    uint32_t *periods; \/* periods of msgs *\/$/;"	m	struct:ECU
+register_ecu	bus.c	/^int register_ecu(ECU* ecu, CANBus *bus) {$/;"	f
+run_bus_tests	test_bus.c	/^void run_bus_tests() {$/;"	f
+run_ecu_tests	test_ecu.c	/^void run_ecu_tests() {$/;"	f
+state	ecu.h	/^    ECUState state; $/;"	m	struct:ECU
+test_add_can_message	test_ecu.c	/^static void test_add_can_message() {$/;"	f	file:
+test_bus_init_with_correct_parameters	test_bus.c	/^static void test_bus_init_with_correct_parameters() {$/;"	f	file:
+test_bus_init_with_max_node_out_of_bounds	test_bus.c	/^static void test_bus_init_with_max_node_out_of_bounds() {$/;"	f	file:
+test_ecu_init_with_correct_parameters	test_ecu.c	/^static void test_ecu_init_with_correct_parameters() {$/;"	f	file:
+test_register_ecu	test_bus.c	/^static void test_register_ecu() {$/;"	f	file:
