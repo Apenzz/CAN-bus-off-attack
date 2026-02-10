@@ -11,11 +11,28 @@
 static void test_add_can_message();
 static void test_ecu_init_with_correct_parameters();
 static void test_send();
+static void test_listen();
+
 
 void run_ecu_tests() {
     test_ecu_init_with_correct_parameters();
     test_add_can_message();
     test_send();
+    test_listen();
+}
+
+static void test_listen() {
+    ECU *ecu = ecu_init();
+    CANBus *bus = bus_init(0);
+    register_ecu(ecu, bus);
+    add_frame_to_ecu(0x100, 8, NULL, 10, ecu);
+    send(ecu, ecu->msg_list); /* now is_transmitting == true */
+    bus->collision_detected = true; /* let's manually set a collision */
+    listen(ecu);
+    assert(ecu->tec == 8); /*tec should have increased */
+    assert(ecu->state == ERROR_ACTIVE); /* should still be in error active mode */
+    assert(ecu->is_transmitting == false);
+    assert(ecu->current_msg == NULL);
 }
 
 static void test_send() {

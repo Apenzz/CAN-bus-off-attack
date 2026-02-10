@@ -31,4 +31,8 @@ void destroy_ecu(ECU *ecu);
 
 void send(ECU *ecu, Frame *msg);
 
+void listen(ECU *ecu);
+
+static void update_ecu_state(ECU *ecu);
+
 #endif
