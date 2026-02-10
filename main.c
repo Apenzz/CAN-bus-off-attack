@@ -45,5 +45,6 @@ int main() {
     }
     printf("Beginning of simulation\n");
     // TODO
+    
     printf("End of the simulation\n");
 }

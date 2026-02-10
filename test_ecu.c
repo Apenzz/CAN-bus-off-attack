@@ -36,5 +36,6 @@ static void test_ecu_init_with_correct_parameters() {
     assert(ecu->msg_list == NULL);
     assert(ecu->msg_count == 0);
     assert(ecu->periods == NULL);
+    assert(ecu->current_msg == NULL);
 }
 

@@ -20,6 +20,8 @@ typedef struct ECU {
     uint8_t msg_count; /* number of periodic can frames */
     uint32_t *periods; /* periods of msgs */
 
+    Frame current_msg; /* current msg it's sending */
+
 } ECU;
 
 ECU* ecu_init();
