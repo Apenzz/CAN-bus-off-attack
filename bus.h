@@ -18,3 +18,5 @@ CANBus* bus_init(int max_nodes);
 void destroy_bus(CANBus *bus);
 
 int register_ecu(ECU *ecu, CANBus *bus);
+
+void bus_process_tick(CANBus *bus);
