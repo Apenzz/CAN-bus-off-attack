@@ -33,4 +33,6 @@ void send(ECU *ecu, Frame *msg);
 
 void listen(ECU *ecu);
 
+void check_transmission_outcome(ECU *ecu); 
+
 #endif
