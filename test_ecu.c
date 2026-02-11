@@ -8,18 +8,47 @@
 #include "frame.h"
 #include "bus.h"
 
-static void test_add_can_message();
-static void test_ecu_init_with_correct_parameters();
-static void test_send();
-static void test_listen();
+typedef struct {
+    ECU *ecu;
+    CANBus *bus;
+} SimpleFixture;
 
+typedef struct {
+    ECU *victim;
+    ECU *attacker;
+    CANBus *bus;
+} AttackFixture;
 
-void run_ecu_tests() {
-    test_ecu_init_with_correct_parameters();
-    test_add_can_message();
-    test_send();
-    test_listen();
+static SimpleFixture* create_simple_fixture() {
+    SimpleFixture *f = malloc(sizeof(SimpleFixture));
+    f->bus = bus_init(2);
+    f->ecu = ecu_init();
+    register_ecu(f->ecu, f->bus);
+    return f;
 }
+
+static void destroy_simple_fixture(SimpleFixture *f) {
+    if (!f) return;
+    destroy(f->bus);
+    free(f);
+}
+
+static AttackFixture* create_attack_fixture() {
+    AttackFixture *f = malloc(sizeof(AttackFixture));
+    f->bus = bus_init(2);
+    f->ecu = ecu_init();
+    register_ecu(f->victim, f->bus);
+    register_ecu(f->attacker, f->bus);
+    return f;
+}
+
+static void destroy_attack_fixture(AttackFixture *f) {
+    if (!f) return;
+    destroy_bus(f->bus);
+    free(f);
+}
+
+
 
 static void test_listen() {
     ECU *ecu = ecu_init();
@@ -69,3 +98,9 @@ static void test_ecu_init_with_correct_parameters() {
     assert(ecu->current_msg == NULL);
 }
 
+void run_ecu_tests() {
+    test_ecu_init_with_correct_parameters();
+    test_add_can_message();
+    test_send();
+    test_listen();
+}
