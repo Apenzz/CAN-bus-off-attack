@@ -23,6 +23,8 @@ typedef struct ECU {
 
     Frame *current_msg; /* current msg it's sending */
 
+    bool is_attacker; /* if true, can manipulate error counters */
+
 } ECU;
 
 ECU* ecu_init();
@@ -34,5 +36,9 @@ void send(ECU *ecu, Frame *msg);
 void listen(ECU *ecu);
 
 void check_transmission_outcome(ECU *ecu); 
+
+/* Attacker specific functions */
+void set_as_attacker(ECU *ecu);
+void attacker_reset_tec(ECU *ecu);
 
 #endif

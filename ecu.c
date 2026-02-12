@@ -27,6 +27,7 @@ ECU* ecu_init() {
     ecu->periods = NULL;
     
     ecu->current_msg = NULL;
+    ecu->is_attacker = false; /* Normal ECU by default */
     return ecu;
 }
 
@@ -61,18 +62,22 @@ void listen(ECU *ecu) {
 void check_transmission_outcome(ECU *ecu) {
     if (!ecu || !ecu->bus || !ecu->is_transmitting) return;
 
+    CANBus *bus = ecu->bus;
+
     /* is winning message NULL? */
-    if (!ecu->bus->winning_msg) {
+    if (!bus->winning_msg) {
         printf("This should never print if bus logic is correct!\n");
         ecu->is_transmitting = false;
         ecu->current_msg = NULL;
         return;
     }
+
+    bool won_arbitration = (ecu->current_msg->id == bus->winning_msg->id);
     
     /* Did I win arbitration? */
-    if (ecu->current_msg->id == ecu->bus->winning_msg->id) {
+    if (won_arbitration) {
         /* Was there a collision? */
-        if (ecu->bus->collision_detected) {
+        if (bus->collision_detected) {
             ecu->tec += 8; /* transmission error */
         } else { /* No collision */
             if (ecu->tec > 0) ecu->tec--;
@@ -83,3 +88,14 @@ void check_transmission_outcome(ECU *ecu) {
     ecu->current_msg = NULL;
 } 
 
+void set_as_attacker(ECU *ecu) {
+    if (!ecu) return;
+    ecu->is_attacker = true;
+}
+
+void attacker_reset_tec(ECU *ecu) {
+    if (!ecu || !ecu->is_attacker) return;
+
+    ecu->tec = 0;
+    update_ecu_state(ecu);
+}
