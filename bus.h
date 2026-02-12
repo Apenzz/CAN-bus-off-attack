@@ -1,3 +1,6 @@
+#ifndef __BUS_H__
+#define __BUS_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -20,3 +23,5 @@ void destroy_bus(CANBus *bus);
 int register_ecu(ECU *ecu, CANBus *bus);
 
 void bus_process_tick(CANBus *bus);
+
+#endif
