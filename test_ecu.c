@@ -115,9 +115,10 @@ static void test_check_transmission_outcome() {
     send(f->attacker, f->attacker->msg_list);
 
     f->bus->collision_detected = true;
-    f->bus->winning_msg = f->victim->msg_list;
+    f->bus->winning_msg = f->attacker->msg_list;
 
     check_transmission_outcome(f->victim);
+    check_transmission_outcome(f->attacker);
 
     assert(f->victim->tec == 8);
 
