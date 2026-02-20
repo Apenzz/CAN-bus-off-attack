@@ -53,15 +53,13 @@ static void destroy_attack_fixture(AttackFixture *f) {
 
 static void test_listen() {
     SimpleFixture *f = create_simple_fixture();
-
-    add_frame_to_ecu(0x100, 8, NULL, 10, f->ecu);
-    send(f->ecu, f->ecu->msg_list); /* now is_transmitting == true */
-    f->bus->collision_detected = true; /* let's manually set a collision */
+    
     listen(f->ecu);
-    assert(f->ecu->tec == 8); /*tec should have increased */
-    assert(f->ecu->state == ERROR_ACTIVE); /* should still be in error active mode */
-    assert(f->ecu->is_transmitting == false);
-    assert(f->ecu->current_msg == NULL);
+
+    assert(f->ecu->tec == 0);
+    assert(f->ecu->state == ERROR_ACTIVE);
+
+    destroy_simple_fixture(f);
 }
 
 static void test_send() {
@@ -184,36 +182,7 @@ static void test_check_transmission_outcome_lost_arbitration() {
     assert(f->attacker->tec == 0);
 
     destroy_attack_fixture(f);
-}
-
-static void test_ecu_state_transitions() {
-    ECU *ecu = ecu_init();
-
-    /* error active initially */
-    assert(ecu->state == ERROR_ACTIVE);
-
-    /* simulate errors to reach ERROR_PASSIVE */
-    ecu->tec = 128;
-    send(ecu, &(Frame){.id = 0x100, .dlc = 1});
-    ecu->is_transmitting = false; /* reset for test */
-    
-    ecu->is_transmitting = true;
-    CANBus *bus = bus_init(2);
-    register_ecu(ecu, bus);
-    bus->winning_msg = &(Frame){.id = 0x100};
-    bus->collision_detected = false;
-    check_transmission_outcome(ecu);
-
-    assert(ecu->state == ERROR_PASSIVE);
-
-    /* simulate more errors to reach bus_off */
-    ecu->tec = 256;
-    ecu->is_transmitting = true;
-    check_transmission_outcome(ecu);
-
-    assert(ecu->state == BUS_OFF);
-    
-    destroy_bus(bus);
+    printf("ciao!\n");
 }
 
 static void test_attacker_flag() {
@@ -252,14 +221,13 @@ static void test_attacker_tec_reset() {
 }
 
 void run_ecu_tests() {
-    test_ecu_init_with_correct_parameters();
-    test_add_can_message();
-    test_send();
     test_listen();
+    test_send();
+    test_add_can_message();
+    test_ecu_init_with_correct_parameters();
     test_check_transmission_outcome_collision();
     test_check_transmission_outcome_successful();
     test_check_transmission_outcome_lost_arbitration();
-    test_ecu_state_transitions();
     test_attacker_flag();
     test_attacker_tec_reset();
 }

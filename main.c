@@ -49,12 +49,12 @@ void print_simulation_summary(SimStats *stats, ECU *victim, ECU *attacker) {
 }
 
 int main() {
-    /* 
+     
     printf("Running unit tests...\n");
     run_ecu_tests();
     run_bus_tests();
     printf("All tests passed!\n\n");
-    */ 
+     
 
     ECU *victim = ecu_init();
     ECU *attacker = ecu_init();
