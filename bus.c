@@ -3,6 +3,7 @@
 
 #include "bus.h"
 #include "ecu.h"
+#include "frame.h"
 
 CANBus* bus_init(int max_nodes) {
     if (max_nodes < 2 || max_nodes > 255) max_nodes = 2; /* make room for at least 2 nodes: one victim and one attacker */
@@ -17,6 +18,7 @@ CANBus* bus_init(int max_nodes) {
     bus->max_nodes = max_nodes;
     bus->is_idle = true;
     bus->collision_detected = false;
+    bus->winning_msg = NULL;
     return bus;
 }
 

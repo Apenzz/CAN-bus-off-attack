@@ -47,16 +47,17 @@ void send(ECU *ecu, Frame *msg) {
 
 void listen(ECU *ecu) {
     if (!ecu || !ecu->bus || ecu->state == BUS_OFF) return;
-
+/*
     if (ecu->is_transmitting && ecu->bus->collision_detected) {
         ecu->tec += 8; 
     } else if (ecu->is_transmitting) {
         if (ecu->tec > 0) ecu->tec--;
     }
-    /* update ecu internal state for the next tick */
+    // update ecu internal state for the next tick
     update_ecu_state(ecu);
     ecu->is_transmitting = false;
     ecu->current_msg = NULL;
+    */
 }
 
 void check_transmission_outcome(ECU *ecu) {
@@ -80,7 +81,7 @@ void check_transmission_outcome(ECU *ecu) {
         if (bus->collision_detected) {
             ecu->tec += 8; /* transmission error */
         } else { /* No collision */
-            if (ecu->tec > 0) ecu->tec--;
+            if (ecu->tec > 0) ecu->tec -= 1;
         }
     }
     update_ecu_state(ecu);
@@ -88,6 +89,7 @@ void check_transmission_outcome(ECU *ecu) {
     ecu->current_msg = NULL;
 } 
 
+/* Attacker specific functions */
 void set_as_attacker(ECU *ecu) {
     if (!ecu) return;
     ecu->is_attacker = true;
