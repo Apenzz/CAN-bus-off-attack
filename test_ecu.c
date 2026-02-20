@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "test_ecu.h"
 #include "ecu.h"
@@ -80,6 +81,7 @@ static void test_add_can_message() {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
     add_frame_to_ecu(0x100, 8, data, 10, f->ecu);
+    
     assert(f->ecu->msg_count == 1);
     assert(f->ecu->periods[0] == 10);
     assert(f->ecu->msg_list[0].id == 0x100);
@@ -101,28 +103,152 @@ static void test_ecu_init_with_correct_parameters() {
     assert(ecu->msg_count == 0);
     assert(ecu->periods == NULL);
     assert(ecu->current_msg == NULL);
+    assert(ecu->is_attacker == false);
 
     destroy_ecu(ecu);
 }
 
-static void test_check_transmission_outcome() {
+static void test_check_transmission_outcome_collision() {
     AttackFixture *f = create_attack_fixture();
 
+    /* Both send same ID with different data */
     add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, f->victim);
     add_frame_to_ecu(0x100, 1, (uint8_t[]){0x00}, 10, f->attacker);
+    
+    set_as_attacker(f->attacker);
 
     send(f->victim, f->victim->msg_list);
     send(f->attacker, f->attacker->msg_list);
 
-    f->bus->collision_detected = true;
-    f->bus->winning_msg = f->attacker->msg_list;
+    /* Process bus, collision should be detected */
+    bus_process_tick(f->bus);
 
+    assert(f->bus->collision_detected == true);
+
+    /* Both ECUs increment TEC */
     check_transmission_outcome(f->victim);
     check_transmission_outcome(f->attacker);
 
     assert(f->victim->tec == 8);
+    assert(f->attacker->tec == 8);
+
+    /* attacker can reset TEC */
+    attacker_reset_tec(f->attacker); //TODO: FIND THE FRICKING ERROR!!!!
+    printf("ATTAcker TEC: %d\n", f->attacker->tec);
+    assert(f->attacker->tec == 0);
+    assert(f->victim->tec == 8);
 
     destroy_attack_fixture(f);
+}
+
+static void test_check_transmission_outcome_successful() {
+    SimpleFixture *f = create_simple_fixture();
+
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, f->ecu);
+    f->ecu->tec = 10; /* start with some errors */
+
+    send(f->ecu, f->ecu->msg_list);
+    bus_process_tick(f->bus);
+
+    assert(f->bus->collision_detected == false);
+
+    check_transmission_outcome(f->ecu);
+
+    assert(f->ecu->tec == 9);
+    assert(f->ecu->is_transmitting == false);
+
+    destroy_simple_fixture(f);
+}
+
+static void test_check_transmission_outcome_lost_arbitration() {
+    AttackFixture *f = create_attack_fixture();
+
+    /* Victim sends higher ID */
+    add_frame_to_ecu(0x200, 1, (uint8_t[]){0xFF}, 10, f->victim);
+    /* Attacker sends lower ID */
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, f->attacker);
+
+    f->victim->tec = 10;
+
+    send(f->victim, f->victim->msg_list);
+    send(f->attacker, f->attacker->msg_list);
+
+    bus_process_tick(f->bus);
+
+    assert(f->bus->winning_msg->id == 0x100);
+
+    check_transmission_outcome(f->victim);
+    check_transmission_outcome(f->attacker);
+
+    assert(f->victim->tec == 10);
+    assert(f->attacker->tec == 0);
+
+    destroy_attack_fixture(f);
+}
+
+static void test_ecu_state_transitions() {
+    ECU *ecu = ecu_init();
+
+    /* error active initially */
+    assert(ecu->state == ERROR_ACTIVE);
+
+    /* simulate errors to reach ERROR_PASSIVE */
+    ecu->tec = 128;
+    send(ecu, &(Frame){.id = 0x100, .dlc = 1});
+    ecu->is_transmitting = false; /* reset for test */
+    
+    ecu->is_transmitting = true;
+    CANBus *bus = bus_init(2);
+    register_ecu(ecu, bus);
+    bus->winning_msg = &(Frame){.id = 0x100};
+    bus->collision_detected = false;
+    check_transmission_outcome(ecu);
+
+    assert(ecu->state == ERROR_PASSIVE);
+
+    /* simulate more errors to reach bus_off */
+    ecu->tec = 256;
+    ecu->is_transmitting = true;
+    check_transmission_outcome(ecu);
+
+    assert(ecu->state == BUS_OFF);
+    
+    destroy_bus(bus);
+}
+
+static void test_attacker_flag() {
+    ECU *normal_ecu = ecu_init();
+    ECU *attacker_ecu = ecu_init();
+
+    /* Initialy both are normal */
+    assert(normal_ecu->is_attacker == false);
+    assert(attacker_ecu->is_attacker == false);
+
+    set_as_attacker(attacker_ecu);
+
+    assert(normal_ecu->is_attacker == false);
+    assert(attacker_ecu->is_attacker == true);
+
+    destroy_ecu(normal_ecu);
+    destroy_ecu(attacker_ecu);
+}
+
+static void test_attacker_tec_reset() {
+    ECU *normal_ecu = ecu_init();
+    ECU *attacker_ecu = ecu_init();
+    set_as_attacker(attacker_ecu);
+
+    normal_ecu->tec = 100;
+    attacker_ecu->tec = 100;
+
+    attacker_reset_tec(normal_ecu);
+    attacker_reset_tec(attacker_ecu);
+
+    assert(normal_ecu->tec == 100);
+    assert(attacker_ecu->tec == 0);
+
+    destroy_ecu(normal_ecu);
+    destroy_ecu(attacker_ecu);
 }
 
 void run_ecu_tests() {
@@ -130,5 +256,10 @@ void run_ecu_tests() {
     test_add_can_message();
     test_send();
     test_listen();
-    test_check_transmission_outcome();
+    test_check_transmission_outcome_collision();
+    test_check_transmission_outcome_successful();
+    test_check_transmission_outcome_lost_arbitration();
+    test_ecu_state_transitions();
+    test_attacker_flag();
+    test_attacker_tec_reset();
 }
