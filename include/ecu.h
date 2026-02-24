@@ -5,18 +5,18 @@
 #include <stdint.h>
 
 #include "frame.h"
+#include "types.h"
 
 
 typedef enum { ERROR_ACTIVE, ERROR_PASSIVE, BUS_OFF } ECUState;
-typedef struct CANBus CANBus;
 
-typedef struct ECU {
+struct ECU {
     CANBus *bus; /* bus its connected to */
-    ECUState state; 
+    ECUState state;
     bool is_transmitting;
     uint16_t tec;
     uint16_t rec;
-    
+
     Frame *msg_list; /* list of periodic can frames */
     uint8_t msg_count; /* number of periodic can frames */
     uint32_t *periods; /* periods of msgs */
@@ -24,8 +24,7 @@ typedef struct ECU {
     Frame *current_msg; /* current msg it's sending */
 
     bool is_attacker; /* if true, can manipulate error counters */
-
-} ECU;
+};
 
 ECU* ecu_init();
 

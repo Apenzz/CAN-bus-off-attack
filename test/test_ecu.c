@@ -220,6 +220,126 @@ static void test_attacker_tec_reset() {
     destroy_ecu(attacker_ecu);
 }
 
+static void test_listen_rec_increments_on_collision() {
+    /* 3-node bus: victim and attacker collide, bystander is listening */
+    CANBus *bus = bus_init(3);
+    ECU *victim    = ecu_init();
+    ECU *attacker  = ecu_init();
+    ECU *bystander = ecu_init();
+    register_ecu(victim,    bus);
+    register_ecu(attacker,  bus);
+    register_ecu(bystander, bus);
+
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, victim);
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0x00}, 10, attacker);
+
+    send(victim,   victim->msg_list);
+    send(attacker, attacker->msg_list);
+    bus_process_tick(bus);
+
+    assert(bus->collision_detected == true);
+
+    listen(bystander);
+
+    assert(bystander->rec == 1);
+    assert(bystander->state == ERROR_ACTIVE); /* still healthy */
+
+    destroy_bus(bus);
+}
+
+static void test_listen_rec_decrements_on_success() {
+    CANBus *bus = bus_init(2);
+    ECU *sender   = ecu_init();
+    ECU *receiver = ecu_init();
+    register_ecu(sender,   bus);
+    register_ecu(receiver, bus);
+
+    receiver->rec = 10; /* pre-load some errors */
+
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, sender);
+    send(sender, sender->msg_list);
+    bus_process_tick(bus);
+
+    assert(bus->collision_detected == false);
+
+    listen(receiver);
+
+    assert(receiver->rec == 9);
+
+    destroy_bus(bus);
+}
+
+static void test_listen_idle_bus_no_change() {
+    CANBus *bus = bus_init(2);
+    ECU *ecu = ecu_init();
+    register_ecu(ecu, bus);
+    ecu->rec = 5;
+
+    bus_process_tick(bus); /* bus stays idle, no one transmitting */
+
+    assert(bus->is_idle == true);
+
+    listen(ecu);
+
+    assert(ecu->rec == 5); /* unchanged */
+
+    destroy_bus(bus);
+}
+
+static void test_listen_rec_triggers_error_passive() {
+    CANBus *bus = bus_init(3);
+    ECU *victim    = ecu_init();
+    ECU *attacker  = ecu_init();
+    ECU *bystander = ecu_init();
+    register_ecu(victim,    bus);
+    register_ecu(attacker,  bus);
+    register_ecu(bystander, bus);
+
+    bystander->rec = 127; /* one increment away from ERROR_PASSIVE */
+
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, victim);
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0x00}, 10, attacker);
+
+    send(victim,   victim->msg_list);
+    send(attacker, attacker->msg_list);
+    bus_process_tick(bus);
+
+    assert(bus->collision_detected == true);
+
+    listen(bystander);
+
+    assert(bystander->rec == 128);
+    assert(bystander->state == ERROR_PASSIVE);
+
+    destroy_bus(bus);
+}
+
+static void test_listen_skipped_for_transmitting_node() {
+    CANBus *bus = bus_init(2);
+    ECU *ecu1 = ecu_init();
+    ECU *ecu2 = ecu_init();
+    register_ecu(ecu1, bus);
+    register_ecu(ecu2, bus);
+
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0xFF}, 10, ecu1);
+    add_frame_to_ecu(0x100, 1, (uint8_t[]){0x00}, 10, ecu2);
+
+    send(ecu1, ecu1->msg_list);
+    send(ecu2, ecu2->msg_list);
+    bus_process_tick(bus);
+
+    assert(bus->collision_detected == true);
+
+    /* calling listen() on a transmitting node must be a no-op */
+    listen(ecu1);
+    listen(ecu2);
+
+    assert(ecu1->rec == 0);
+    assert(ecu2->rec == 0);
+
+    destroy_bus(bus);
+}
+
 void run_ecu_tests() {
     test_listen();
     test_send();
@@ -230,4 +350,9 @@ void run_ecu_tests() {
     test_check_transmission_outcome_lost_arbitration();
     test_attacker_flag();
     test_attacker_tec_reset();
+    test_listen_rec_increments_on_collision();
+    test_listen_rec_decrements_on_success();
+    test_listen_idle_bus_no_change();
+    test_listen_rec_triggers_error_passive();
+    test_listen_skipped_for_transmitting_node();
 }

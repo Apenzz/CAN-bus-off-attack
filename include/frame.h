@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef struct ECU ECU;
+#include "types.h"
 
 /* CAN Data Frame
  * For the sake of simplicity this simulation only considers frames that contain the following fields:
@@ -12,11 +12,11 @@ typedef struct ECU ECU;
  *  - Data: the actual data (0 to 8 bytes long)
  *
  */
-typedef struct Frame {
-    uint32_t id;   
+struct Frame {
+    uint32_t id;
     uint8_t dlc;
     uint8_t data[8];
-} Frame;
+};
 
 void add_frame_to_ecu(uint32_t id, uint8_t dlc, uint8_t *data, uint32_t period, ECU *ecu);
 

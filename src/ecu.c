@@ -46,18 +46,20 @@ void send(ECU *ecu, Frame *msg) {
 }
 
 void listen(ECU *ecu) {
-    if (!ecu || !ecu->bus || ecu->state == BUS_OFF) return;
-/*
-    if (ecu->is_transmitting && ecu->bus->collision_detected) {
-        ecu->tec += 8; 
-    } else if (ecu->is_transmitting) {
-        if (ecu->tec > 0) ecu->tec--;
+    if (!ecu || !ecu->bus || ecu->state == BUS_OFF || ecu->is_transmitting) return;
+
+    CANBus *bus = ecu->bus;
+
+    /* Bus was idle this tick — nothing to receive */
+    if (bus->is_idle) return;
+
+    if (bus->collision_detected) {
+        ecu->rec += 1; /* receiver detects error on bus (ISO 11898-1) */
+    } else {
+        if (ecu->rec > 0) ecu->rec -= 1; /* successful reception */
     }
-    // update ecu internal state for the next tick
+
     update_ecu_state(ecu);
-    ecu->is_transmitting = false;
-    ecu->current_msg = NULL;
-    */
 }
 
 void check_transmission_outcome(ECU *ecu) {
