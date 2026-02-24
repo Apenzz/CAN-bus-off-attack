@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define LOG_FILE "tec_log.csv"
+
 #include "test_ecu.h"
 #include "test_bus.h"
 
@@ -159,6 +161,9 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
     const bool verbose   = false;
     Frame      jam_frame;
 
+    FILE *log = fopen(LOG_FILE, "w");
+    if (log) fprintf(log, "tick,victim_tec,attacker_tec,victim_state\n");
+
     printf("Beginning of simulation...\n");
 
     for (int tick = 0; tick < MAX_TICKS; tick++) {
@@ -176,6 +181,11 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
 
         process_outcomes(bus, victim, attacker, attacker_was_tx, stats, tick, verbose);
 
+        if (log)
+            fprintf(log, "%d,%d,%d,%s\n", tick, victim->tec, attacker->tec,
+                    victim->state == ERROR_ACTIVE  ? "ERROR_ACTIVE"  :
+                    victim->state == ERROR_PASSIVE ? "ERROR_PASSIVE" : "BUS_OFF");
+
         if (tick > 0 && tick % 100 == 0 && !verbose)
             printf("Tick %4d - Victim TEC: %3d, Attacker TEC: %3d, State: %s, TEC Resets: %d\n",
                     tick, victim->tec, attacker->tec,
@@ -187,6 +197,7 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
             stats->ticks_to_bus_off = tick;
             printf("\nATTACK SUCCESSFUL!\n");
             printf("Victim entered BUS_OFF state at tick %6d\n", tick);
+            if (log) fclose(log);
             return;
         }
 
@@ -194,9 +205,11 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
             stats->ticks_to_bus_off = tick;
             printf("UNEXPECTED: Attacker entered BUS_OFF state at tick %d\n", tick);
             printf("This shouldn't happen if TEC reset is working!!\n");
+            if (log) fclose(log);
             return;
         }
     }
+    if (log) fclose(log);
 }
 
 /* entry point */
