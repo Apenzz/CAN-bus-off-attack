@@ -23,9 +23,9 @@ Based on these counters, each node transitions through three states:
 
 ### The Bus-Off Attack
 
-The attack exploits this mechanism. A collision on the CAN bus occurs when two nodes transmit a frame with the **same ID but different data or DLC**. Both transmitters increment their TEC by 8.
+The attack exploits this mechanism. A collision on the CAN bus occurs when two nodes transmit a frame with the same ID but different data or DLC. Both transmitters increment their TEC by 8.
 
-A standard ECU cannot prevent its TEC from rising. However, a custom or modified CAN controller can **reset its own TEC to 0** after each collision. That's how the attacker works in this simulation.
+A standard ECU cannot prevent its TEC from rising. However, a custom or modified CAN controller can reset its own TEC to 0 after each collision. That's how the attacker works in this simulation.
 
 The attack strategy is therefore:
 
@@ -77,8 +77,6 @@ make run
 make clean
 ```
 
-Unit tests run automatically at startup before the simulation begins.
-
 ### Output
 
 The simulation prints a progress report every 100 ticks and a full summary at the end.
@@ -109,7 +107,7 @@ Each simulation tick represents one complete frame transmission. Real CAN operat
 ### Attacker reaction time
 The attacker detects and jams the victim's frame within the same tick it starts transmitting. In practice, the attacker must detect the start-of-frame bit, decode the ID field, and begin transmitting before the arbitration phase ends — all within a few microseconds. This timing constraint is not modelled.
 
-### Error frames and interframe spacing
+### Error frames
 When a collision is detected in real CAN, the detecting node transmits an **error frame** (6 dominant bits followed by 8 recessive bits). This consumes bus time and delays the next frame. The simulation skips error frames entirely; a collision is resolved instantaneously within a single tick.
 
 ### ACK field
