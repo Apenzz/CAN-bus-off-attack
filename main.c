@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define LOG_FILE "tec_log.csv"
 
@@ -31,23 +32,30 @@ static void run_tests(void) {
     printf("All tests passed!\n\n");
 }
 
-static void setup_simulation(ECU **victim, ECU **attacker, CANBus **bus) {
+static void setup_simulation(ECU **victim, ECU **attacker, CANBus **bus,
+                              uint32_t base_period, bool quiet, bool tec_reset_enabled) {
     *victim   = ecu_init();
     *attacker = ecu_init();
     set_as_attacker(*attacker);
     *bus = bus_init(2);
 
-    printf("Victim initialization...\n");
-    add_frame_to_ecu(0x101, 8, (uint8_t[]){0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}, 10, *victim);
-    add_frame_to_ecu(0x102, 1, (uint8_t[]){0x4C}, 20, *victim);
-    add_frame_to_ecu(0x103, 2, (uint8_t[]){0xD2,0x09}, 50, *victim);
+    if (!quiet) printf("Victim initialization...\n");
+    add_frame_to_ecu(0x101, 8, (uint8_t[]){0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}, base_period,     *victim);
+    add_frame_to_ecu(0x102, 1, (uint8_t[]){0x4C},     base_period * 2, *victim);
+    add_frame_to_ecu(0x103, 2, (uint8_t[]){0xD2,0x09}, base_period * 5, *victim);
 
     register_ecu(*victim,   *bus);
     register_ecu(*attacker, *bus);
 
-    printf("\nAttacker initialization...\n");
-    printf("Attacker type: custom CAN controller with TEC manipulation\n");
-    printf("Attack strategy: mirror victim IDs with corrupted data, reset TEC after each collision\n\n");
+    if (!quiet) {
+        printf("\nAttacker initialization...\n");
+        printf("Attacker type: custom CAN controller with TEC manipulation\n");
+        if (!tec_reset_enabled) {
+            printf("Attack strategy: mirror victim IDs with corrupted data, doesn't reset TEC after each collision\n\n");
+        } else {
+            printf("Attack strategy: mirror victim IDs with corrupted data, reset TEC after each collision\n\n");
+        }
+    }
 }
 
 static void format_hex_data(char *dest, uint8_t *data, uint8_t dlc) {
@@ -112,7 +120,8 @@ static void attacker_tick(ECU *attacker, ECU *victim, Frame *jam_frame, int tick
 }
 
 static void process_outcomes(CANBus *bus, ECU *victim, ECU *attacker,
-                              bool attacker_was_tx, SimStats *stats, int tick, bool verbose) {
+                              bool attacker_was_tx, SimStats *stats, int tick,
+                              bool verbose, bool tec_reset_enabled) {
     for (int i = 0; i < bus->node_count; i++) {
         if (bus->nodes[i]->is_transmitting) {
             uint16_t tec_before = bus->nodes[i]->tec;
@@ -128,7 +137,7 @@ static void process_outcomes(CANBus *bus, ECU *victim, ECU *attacker,
         }
     }
 
-    if (bus->collision_detected && attacker_was_tx) {
+    if (tec_reset_enabled && bus->collision_detected && attacker_was_tx) {
         attacker_reset_tec(attacker);
         stats->attacker_tec_resets++;
         if (verbose)
@@ -156,15 +165,16 @@ static void print_simulation_summary(SimStats *stats, ECU *victim, ECU *attacker
 
 /* simulation loop */
 
-static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *stats) {
-    const int  MAX_TICKS = 2000;
+static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker,
+                            SimStats *stats, bool quiet, bool tec_reset_enabled, bool no_log) {
+    const int  MAX_TICKS = 10000;
     const bool verbose   = false;
     Frame      jam_frame;
 
-    FILE *log = fopen(LOG_FILE, "w");
+    FILE *log = no_log ? NULL : fopen(LOG_FILE, "w");
     if (log) fprintf(log, "tick,victim_tec,attacker_tec,victim_state\n");
 
-    printf("Beginning of simulation...\n");
+    if (!quiet) printf("Beginning of simulation...\n");
 
     for (int tick = 0; tick < MAX_TICKS; tick++) {
         victim_tick(victim, tick, verbose);
@@ -179,14 +189,14 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
             if (verbose) printf("[Tick %4d] *** COLLISION DETECTED ***\n", tick);
         }
 
-        process_outcomes(bus, victim, attacker, attacker_was_tx, stats, tick, verbose);
+        process_outcomes(bus, victim, attacker, attacker_was_tx, stats, tick, verbose, tec_reset_enabled);
 
         if (log)
             fprintf(log, "%d,%d,%d,%s\n", tick, victim->tec, attacker->tec,
                     victim->state == ERROR_ACTIVE  ? "ERROR_ACTIVE"  :
                     victim->state == ERROR_PASSIVE ? "ERROR_PASSIVE" : "BUS_OFF");
 
-        if (tick > 0 && tick % 100 == 0 && !verbose)
+        if (!quiet && tick > 0 && tick % 100 == 0)
             printf("Tick %4d - Victim TEC: %3d, Attacker TEC: %3d, State: %s, TEC Resets: %d\n",
                     tick, victim->tec, attacker->tec,
                     victim->state == ERROR_ACTIVE  ? "ERROR_ACTIVE"  :
@@ -195,16 +205,20 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
 
         if (victim->state == BUS_OFF) {
             stats->ticks_to_bus_off = tick;
-            printf("\nATTACK SUCCESSFUL!\n");
-            printf("Victim entered BUS_OFF state at tick %6d\n", tick);
+            if (!quiet) {
+                printf("\nATTACK SUCCESSFUL!\n");
+                printf("Victim entered BUS_OFF state at tick %6d\n", tick);
+            }
             if (log) fclose(log);
             return;
         }
 
         if (attacker->state == BUS_OFF) {
             stats->ticks_to_bus_off = tick;
-            printf("UNEXPECTED: Attacker entered BUS_OFF state at tick %d\n", tick);
-            printf("This shouldn't happen if TEC reset is working!!\n");
+            if (!quiet) {
+                printf("UNEXPECTED: Attacker entered BUS_OFF state at tick %d\n", tick);
+                printf("This shouldn't happen if TEC reset is working!!\n");
+            }
             if (log) fclose(log);
             return;
         }
@@ -214,19 +228,37 @@ static void run_simulation(CANBus *bus, ECU *victim, ECU *attacker, SimStats *st
 
 /* entry point */
 
-int main(void) {
-    run_tests();
+int main(int argc, char *argv[]) {
+    uint32_t base_period = 10;
+    bool quiet = false;
+    bool tec_reset_enabled = true;
+    bool no_log = false;
+
+    int opt;
+
+    while ((opt = getopt(argc, argv, "p:qrn")) != -1) {
+        switch (opt) {
+            case 'p': base_period = (uint32_t)atoi(optarg); break;
+            case 'q': quiet = true; break;
+            case 'r': tec_reset_enabled = false; break;
+            case 'n': no_log = true; break;
+        }
+    }
+
+    if (!quiet) run_tests();
 
     ECU    *victim, *attacker;
     CANBus *bus;
-    setup_simulation(&victim, &attacker, &bus);
-    print_victim_config(victim);
+    setup_simulation(&victim, &attacker, &bus, base_period, quiet, tec_reset_enabled);
+    if (!quiet) print_victim_config(victim);
 
     SimStats stats = {0};
-    run_simulation(bus, victim, attacker, &stats);
-    print_simulation_summary(&stats, victim, attacker);
+    run_simulation(bus, victim, attacker, &stats, quiet, tec_reset_enabled, no_log);
+    if (!quiet) print_simulation_summary(&stats, victim, attacker);
+
+    printf("TICKS_TO_BUS_OFF=%u\n", stats.ticks_to_bus_off);
 
     destroy_bus(bus);
-    printf("End of the simulation\n");
+    if (!quiet) printf("End of the simulation\n");
     return 0;
 }
