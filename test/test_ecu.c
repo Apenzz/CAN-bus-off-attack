@@ -131,7 +131,7 @@ static void test_check_transmission_outcome_collision() {
     assert(f->attacker->tec == 8);
 
     /* attacker can reset TEC */
-    attacker_reset_tec(f->attacker); //TODO: FIND THE FRICKING ERROR!!!!
+    attacker_reset_tec(f->attacker); 
     printf("ATTAcker TEC: %d\n", f->attacker->tec);
     assert(f->attacker->tec == 0);
     assert(f->victim->tec == 8);
@@ -182,7 +182,6 @@ static void test_check_transmission_outcome_lost_arbitration() {
     assert(f->attacker->tec == 0);
 
     destroy_attack_fixture(f);
-    printf("ciao!\n");
 }
 
 static void test_attacker_flag() {
