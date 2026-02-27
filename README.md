@@ -45,9 +45,9 @@ Once in `BUS_OFF`, the victim ECU stops all communication.
 
   | ID | DLC | Data | Period |
   |---|---|---|---|
-  | `0x101` | 8 | `FF FF FF FF FF FF FF FF` | 10 ticks |
-  | `0x102` | 1 | `4C` | 20 ticks |
-  | `0x103` | 2 | `D2 09` | 50 ticks |
+  | `0x101` | 8 | `FF FF FF FF FF FF FF FF` | p ticks |
+  | `0x102` | 1 | `4C` | 2p ticks |
+  | `0x103` | 2 | `D2 09` | 5p ticks |
 
 - An **attacker ECU** that detects the victim's active transmission each tick, mirrors the frame ID, and corrupts the first byte (`data[0] ^= 0xFF`)
 
@@ -55,7 +55,7 @@ Once in `BUS_OFF`, the victim ECU stops all communication.
 
 - The **error counter rules**: +8 TEC on collision, −1 TEC on success, +1 REC for listening receivers on a collision
 
-- The **attacker's TEC reset** after every collision it causes, simulating a custom controller
+- The **attacker's TEC reset** after every collision it causes, simulating a custom controller (enabled by default, can be disabled with `-r` to model a standard CAN node)
 
 - A **CSV log** (`tec_log.csv`) recording `tick`, `victim_tec`, `attacker_tec`, and `victim_state` at every tick
 
@@ -75,6 +75,34 @@ make run
 
 # Clean build artifacts
 make clean
+
+# Clean everything
+make distclean
+```
+
+### Command-line options
+
+| Flag | Argument | Default | Description |
+|---|---|---|---|
+| `-p` | `<n>` | `10` | Base frame period in ticks. The three victim frames use periods `p`, `2p`, `5p` |
+| `-q` | — | off | Quiet mode: suppress all terminal output (CSV is still written) |
+| `-r` | — | off | Disable attacker TEC reset, modelling a standard CAN controller |
+| `-n` | — | off | Suppress CSV log output |
+
+Examples:
+
+```bash
+# Default run (TEC reset on, verbose, writes tec_log.csv)
+./can_sim.out
+
+# Slower victim frames, quiet output
+./can_sim.out -p 50 -q
+
+# Disable TEC reset to see attacker self-destruct
+./can_sim.out -r
+
+# Quiet, no CSV, period 20, TEC reset on
+./can_sim.out -p 20 -q -n
 ```
 
 ### Output
@@ -93,7 +121,11 @@ pip install pandas matplotlib
 python plot.py
 ```
 
-This produces `tec_plot.png` showing victim and attacker TEC over time with vertical markers at the `ERROR_PASSIVE` and `BUS_OFF` transition points.
+This produces `tec_plot.png` with three panels:
+
+1. **TEC over time (with TEC reset)** — victim TEC climbs linearly to 256 while the attacker stays flat at 0, showing the attack succeeds without leaving a trace on the attacker
+2. **TEC over time (without TEC reset)** — both victim and attacker TEC climb together, showing the attacker self-destructs alongside the victim when it lacks hardware TEC manipulation
+3. **Ticks to BUS_OFF vs frame period** — a sweep over victim base periods 1–100, showing the linear relationship between frame frequency and attack speed
 
 ---
 
