@@ -13,7 +13,7 @@ SRCS    = main.c \
 OBJS    = $(patsubst %.c, $(BUILD)/%.o, $(SRCS))
 DEPS    = $(OBJS:.o=.d)
 
-.PHONY: all clean run
+.PHONY: all clean clean-data distclean run
 
 all: $(TARGET)
 
@@ -31,3 +31,8 @@ run: $(TARGET)
 
 clean:
 	rm -rf $(BUILD) $(TARGET)
+
+clean-data:
+	rm -f tec_log.csv tec_plot.png
+
+distclean: clean clean-data

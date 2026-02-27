@@ -4,3 +4,4 @@ tags
 *csv
 *png
 .venv/
+*.d
