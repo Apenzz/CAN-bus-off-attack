@@ -10,8 +10,8 @@ A discrete-time simulation of the CAN Bus-Off attack written in C. The simulatio
 
 Every CAN node maintains two internal counters:
 
-- **TEC** (Transmit Error Counter) — incremented by **+8** on each transmission error, decremented by **1** on each successful transmission
-- **REC** (Receive Error Counter) — incremented by **+1** when an error is observed as a receiver, decremented by **1** on successful reception
+- **TEC** (Transmit Error Counter) incremented by **+8** on each transmission error, decremented by **1** on each successful transmission
+- **REC** (Receive Error Counter) incremented by **+1** when an error is observed as a receiver, decremented by **1** on successful reception
 
 Based on these counters, each node transitions through three states:
 
@@ -31,7 +31,7 @@ The attack strategy is therefore:
 
 1. Monitor the bus for the victim's frame ID
 2. Immediately transmit a frame with the same ID but corrupted data
-3. A collision occurs — both TECs increment by 8
+3. A collision occurs: both TECs increment by 8
 4. The attacker resets its TEC to 0; the victim cannot
 5. Repeat until the victim's TEC exceeds 255 and it enters `BUS_OFF`
 
@@ -85,9 +85,9 @@ make distclean
 | Flag | Argument | Default | Description |
 |---|---|---|---|
 | `-p` | `<n>` | `10` | Base frame period in ticks. The three victim frames use periods `p`, `2p`, `5p` |
-| `-q` | — | off | Quiet mode: suppress all terminal output (CSV is still written) |
-| `-r` | — | off | Disable attacker TEC reset, modelling a standard CAN controller |
-| `-n` | — | off | Suppress CSV log output |
+| `-q` | - | off | Quiet mode: suppress all terminal output (CSV is still written) |
+| `-r` | - | off | Disable attacker TEC reset, modelling a standard CAN controller |
+| `-n` | - | off | Suppress CSV log output |
 
 Examples:
 
@@ -123,9 +123,9 @@ python plot.py
 
 This produces `tec_plot.png` with three panels:
 
-1. **TEC over time (with TEC reset)** — victim TEC climbs linearly to 256 while the attacker stays flat at 0, showing the attack succeeds without leaving a trace on the attacker
-2. **TEC over time (without TEC reset)** — both victim and attacker TEC climb together, showing the attacker self-destructs alongside the victim when it lacks hardware TEC manipulation
-3. **Ticks to BUS_OFF vs frame period** — a sweep over victim base periods 1–100, showing the linear relationship between frame frequency and attack speed
+1. **TEC over time (with TEC reset)**: victim TEC climbs linearly to 256 while the attacker stays flat at 0, showing the attack succeeds without leaving a trace on the attacker
+2. **TEC over time (without TEC reset)**: both victim and attacker TEC climb together, showing the attacker self-destructs alongside the victim when it lacks hardware TEC manipulation
+3. **Ticks to BUS_OFF vs frame period**: a sweep over victim base periods 1–100, showing the linear relationship between frame frequency and attack speed
 
 ---
 
@@ -137,7 +137,7 @@ The following aspects of real CAN are intentionally omitted or approximated to k
 Each simulation tick represents one complete frame transmission. Real CAN operates at bit-level resolution. The simulation has no concept of bit timing, propagation delay, or clock synchronisation.
 
 ### Attacker reaction time
-The attacker detects and jams the victim's frame within the same tick it starts transmitting. In practice, the attacker must detect the start-of-frame bit, decode the ID field, and begin transmitting before the arbitration phase ends — all within a few microseconds. This timing constraint is not modelled.
+The attacker detects and jams the victim's frame within the same tick it starts transmitting. In practice, the attacker must detect the start-of-frame bit, decode the ID field, and begin transmitting before the arbitration phase ends all within a few microseconds. This timing constraint is not modelled.
 
 ### Error frames
 When a collision is detected in real CAN, the detecting node transmits an **error frame** (6 dominant bits followed by 8 recessive bits). This consumes bus time and delays the next frame. The simulation skips error frames entirely; a collision is resolved instantaneously within a single tick.
