@@ -25,7 +25,7 @@ def run_sweep(periods, tec_reset):
     results = []
     for p in periods:
         cmd = ["./can_sim.out", "-p", str(p), "-q", "-n"]
-        if tec_reset:
+        if not tec_reset:
             cmd.append("-r")
         out = subprocess.check_output(cmd, text=True)
         for line in out.splitlines():
